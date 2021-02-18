@@ -1,4 +1,3 @@
-
 print("loading VALORANT RPC extension by restrafes")
 # import libraries
 import os, subprocess
