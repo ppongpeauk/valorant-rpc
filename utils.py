@@ -45,12 +45,13 @@ def get_puuid(session):
 def get_presence(lockfile, session, config):
     headers = generate_headers(lockfile)
     response = None
+    response_json = None
     try:
         response = requests.get(f"{config['base_endpoint']}:{lockfile['listening_port']}{config['presence_endpoint']}", headers=headers, verify=False)
+        response_json = response.json()
     except:
-        pass
-    response_json = response.json()
-
+        raise RiotPresenceError
+    
     for presence in response_json["presences"]:
         if presence["puuid"] == get_puuid(session):
             return presence
@@ -68,15 +69,8 @@ def parse_time(time): # from colinhartigan/valorant-rich-presence
     split = iso8601.parse_date(split).timestamp()
     return split
 
-def to_map_name(map, ignore_alias=False):
-    maps = {
-        "Port": "Icebox",
-        "Duality": "Bind",
-        "Bonsai": "Split",
-        "Ascent": "Ascent",
-        "Triad": "Haven",
-        "Range": "Range"
-    }
+def to_map_name(config, map, ignore_alias=False):
+    maps = config["rpc_map_equivalents"]
     split = map.split("/")
     if not ignore_alias:
         if len(split) > 1:

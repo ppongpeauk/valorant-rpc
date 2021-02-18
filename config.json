@@ -3,7 +3,7 @@
     "base_endpoint": "https://127.0.0.1",
     "presence_endpoint": "/chat/v4/presences",
     "session_endpoint": "/chat/v1/session",
-    "update_interval": 1,
+    "update_interval": 0.5,
     "fetch_timeout": -1,
     "client_id": 811711436786892871,
     "rpc_gamemode_equivalents": {
@@ -13,5 +13,13 @@
         "deathmatch": "Deathmatch",
         "ggteam": "Discovery",
         "": "Custom"
+    },
+    "rpc_map_equivalents": {
+        "Port": "Icebox",
+        "Duality": "Bind",
+        "Bonsai": "Split",
+        "Ascent": "Ascent",
+        "Triad": "Haven",
+        "Range": "The Range"
     }
 }
