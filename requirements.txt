@@ -1,7 +1,16 @@
+os
 asyncio
+subprocess
+psutil
+time
 pypresence
 urllib3
 requests
 base64
 iso8601
 pywin32
+pystray
+PIL
+threading
+ctypes
+json
