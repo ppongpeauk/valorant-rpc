@@ -1,0 +1,6 @@
+asyncio
+pypresence
+urllib3
+requests
+base64
+iso8601
