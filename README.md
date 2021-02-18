@@ -1,6 +1,6 @@
-# valorant-rpc
+# Valorant-RPC
 
-valorant-rpc is a non-native Discord RPC integration for VALORANT.
+Valorant-RPC is a non-native Discord RPC integration for VALORANT.
 
 ![alt text](https://github.com/restrafes/valorant-rpc/blob/master/assets/example_1.png?raw=true)
 ![alt text](https://github.com/restrafes/valorant-rpc/blob/master/assets/example_2.png?raw=true)
