@@ -14,3 +14,4 @@ PIL
 threading
 ctypes
 json
+pyinstaller
