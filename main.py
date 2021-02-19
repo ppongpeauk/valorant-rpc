@@ -183,7 +183,7 @@ if __name__ == "__main__":
                         get_start = game_presence["partyVersion"]
                         get_state = ""
                         if game_presence["sessionLoopState"] == "INGAME":
-                            #get_state = f"In a Party" # ({game_presence['partyOwnerMatchScoreAllyTeam']}-{game_presence['partyOwnerMatchScoreEnemyTeam']})
+                            #get_state = f"In a Party" # 
                             if game_presence["partySize"] > 1:
                                 get_state = "In a Party"
                             else:
@@ -196,7 +196,7 @@ if __name__ == "__main__":
                             small_image = f"{match_type.lower()}-icon",
                             small_text = f"{match_type}",
                             pid = int(lockfile["pid"]),
-                            details = f"{to_map_name(config, game_presence['matchMap'])} ({match_type})",
+                            details = f"{match_type}: {game_presence['partyOwnerMatchScoreAllyTeam']} - {game_presence['partyOwnerMatchScoreEnemyTeam']}",
                             party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
                             state = get_state,
                             start = get_start
