@@ -1,7 +1,7 @@
 print("loading VALORANT RPC extension by restrafes")
 # import libraries
-import os, subprocess
-import asyncio, psutil
+import os, subprocess, psutil
+import asyncio
 import pypresence, time
 import json
 from psutil import AccessDenied
@@ -25,7 +25,7 @@ def close_program():
     global systray, rpc
     rpc.close()
     systray.stop()
-    raise SystemExit(0) # stop everything and close the process
+    sys.exit() # close the process
 
 # hide the console window if debug is off
 window_shown = config["debug"]
@@ -70,7 +70,7 @@ def is_process_running(required_processes=["VALORANT-Win64-Shipping.exe", "RiotC
         try:
             processes.append(proc.name())
         except (PermissionError, AccessDenied):
-            pass # some processes are high-level and cannot have its attributes accessed!
+            pass # some processes are higher than user-level and cannot have its attributes accessed
     for process in required_processes:
         if process in processes:
             return True
@@ -78,22 +78,23 @@ def is_process_running(required_processes=["VALORANT-Win64-Shipping.exe", "RiotC
 
 # discord rpc implementation
 rpc = pypresence.Presence(str(config["client_id"]), loop=event_loop)
-rpc_menu_default = {
-    "large_image": "valorant-logo",
-    "large_text": "VALORANT®"
-}
+rpc_menu_default = {"large_image": "valorant-logo", "large_text": "VALORANT®"}
 rpc_gamemode_equivalents = config["rpc_gamemode_equivalents"]
+
 if __name__ == "__main__":
+    # if this is a clean run, start valorant and wait for authentication
     if not is_process_running():
         print("client not running, launching the riot client application..")
         subprocess.Popen([os.environ['VRPC_RCS'], "--launch-product=valorant", "--launch-patchline=live"])
         while not is_process_running():
             time.sleep(1)
-            
+
+    # connect pypresence and create a thread for systray
     rpc.connect()
     systray_thread = threading.Thread(target=run_systray)
     systray_thread.start()
 
+    # yield for the lockfile containing all necessary credentials for the local riot api
     lockfile = None
     lockfile_wait_cycles = 0
     while (config["fetch_timeout"] <= lockfile_wait_cycles or config["fetch_timeout"] < 0) and lockfile is None and is_process_running():
@@ -103,16 +104,14 @@ if __name__ == "__main__":
             lockfile = get_lockfile()
         except:
             pass
-    
-    if lockfile is None:
+    if lockfile is None: # close the program if a timeout is set and reached and no lockfile is detected
         print("lockfile fetch timeout exceeded, stopping script")
         close_program()
-
     print(f"LOCKFILE: {lockfile}")
 
+    # yield for session data from the local riot api
     session = None
     session_wait_cycles = 0
-    
     while (config["fetch_timeout"] <= session_wait_cycles or config["fetch_timeout"] < 0) and session is None and is_process_running():
         print(f"waiting for session data ({session_wait_cycles})")
         session_wait_cycles += 1
@@ -125,12 +124,12 @@ if __name__ == "__main__":
             session = None
             close_program()
         time.sleep(1)
-
-    if session is None:
+    if session is None: # close the program if a timeout is set and reached and no session is detected
         print("session fetch timeout exceeded, stopping script")
         close_program()
     print(f"SESSION: {session}")
 
+    # main script
     while True:
         time.sleep(config["update_interval"])
         if not is_process_running():
@@ -141,25 +140,16 @@ if __name__ == "__main__":
             try:
                 network_presence = get_presence(lockfile, session, config)
                 game_presence = get_game_presence(network_presence)
-                if network_presence["state"] == "away":
-                    get_state = ""
-                    if game_presence["partyState"] == "MATCHMAKING":
-                        get_state = "In Queue"
-                        get_start = parse_time(game_presence["queueEntryTime"])
-                    else:
-                        if game_presence["partySize"] > 1:
-                            get_state = "In a Party"
-                        else:
-                            get_state = "Solo"
+                if network_presence["state"] == "away": # if the game is idle on the menu screen
+                    get_state = "In a Party" if game_presence["partySize"] > 1 else "Solo"
                     rpc.update(
                         **rpc_menu_default,
-                        pid = int(lockfile["pid"]),
                         details = "Away",
                         party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
                         state = get_state
                     )
-                elif network_presence["state"] in ["chat", "dnd"]:
-                    if game_presence["sessionLoopState"] == "MENUS":
+                else: # if the player is in the lobby or in-game
+                    if game_presence["sessionLoopState"] == "MENUS": # if the player is on the menu screem
                         get_state = ""
                         get_start = None
                         if game_presence["partyState"] == "MATCHMAKING":
@@ -170,32 +160,31 @@ if __name__ == "__main__":
                                 get_state = "In a Party"
                             else:
                                 get_state = "Solo"
+
                         rpc.update(
                             **rpc_menu_default,
-                            pid = int(lockfile["pid"]),
                             details = (rpc_gamemode_equivalents[game_presence["queueId"]] if game_presence["queueId"] in rpc_gamemode_equivalents else "Discovery") + " (Lobby)",
                             party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
                             state = get_state,
                             start = get_start
                         )
-                    elif game_presence["sessionLoopState"] in ["INGAME", "PREGAME"]:
+                    elif game_presence["sessionLoopState"] in ["INGAME", "PREGAME"]: # if the player is on the agent select screen or in a round
                         match_type = (rpc_gamemode_equivalents[game_presence["queueId"]] if game_presence["queueId"] in rpc_gamemode_equivalents else "Discovery")
                         get_start = game_presence["partyVersion"]
                         get_state = ""
                         if game_presence["sessionLoopState"] == "INGAME":
-                            #get_state = f"In a Party" # 
                             if game_presence["partySize"] > 1:
                                 get_state = "In a Party"
                             else:
                                 get_state = "Solo"
                         elif game_presence["sessionLoopState"] == "PREGAME":
                             get_state = "Agent Select"
+                            
                         rpc.update(
                             large_image = f"{to_map_name(config, game_presence['matchMap'], True).lower()}-splash",
                             large_text = f"{to_map_name(config, game_presence['matchMap'])}",
                             small_image = f"{match_type.lower()}-icon",
                             small_text = f"{match_type}",
-                            pid = int(lockfile["pid"]),
                             details = f"{match_type}: {game_presence['partyOwnerMatchScoreAllyTeam']} - {game_presence['partyOwnerMatchScoreEnemyTeam']}",
                             party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
                             state = get_state,
