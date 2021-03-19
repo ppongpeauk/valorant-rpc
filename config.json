@@ -3,7 +3,7 @@
     "base_endpoint": "https://127.0.0.1",
     "presence_endpoint": "/chat/v4/presences",
     "session_endpoint": "/chat/v1/session",
-    "update_interval": 0.5,
+    "update_interval": 1.5,
     "fetch_timeout": -1,
     "client_id": 811711436786892871,
     "rpc_gamemode_equivalents": {
