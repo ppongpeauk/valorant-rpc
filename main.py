@@ -82,9 +82,15 @@ if __name__ == "__main__":
             return False
 
         # discord rpc implementation
-        rpc = pypresence.Presence(client_id=str(config["client_id"]))
+        rpc, rpc_state = pypresence.Presence(client_id=str(config["client_id"])), None
         rpc_menu_default = {"large_image": "valorant-logo", "large_text": "VALORANT®"}
         rpc_gamemode_equivalents = config["rpc_gamemode_equivalents"]
+        def rpc_update(**kwargs): # only interacts with the RPC api if the requested state is different than its current state
+            global rpc, rpc_state
+            if kwargs != rpc_state:
+                print(kwargs)
+                rpc.update(**kwargs)
+                rpc_state = kwargs
 
         # if this is a clean run, start valorant and wait for authentication
         if not is_process_running():
@@ -141,7 +147,7 @@ if __name__ == "__main__":
                 game_presence = get_game_presence(network_presence)
                 if network_presence["state"] == "away": # if the game is idle on the menu screen
                     get_state = "In a Party" if game_presence["partySize"] > 1 else "Solo"
-                    rpc.update(
+                    rpc_update(
                         **rpc_menu_default,
                         details = "Away",
                         party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
@@ -159,7 +165,7 @@ if __name__ == "__main__":
                         else:
                             get_state = "In a Party" if game_presence["partySize"] > 1 else "Solo"
 
-                        rpc.update(
+                        rpc_update(
                             **rpc_menu_default,
                             details = (rpc_gamemode_equivalents[game_presence["queueId"]] if game_presence["queueId"] in rpc_gamemode_equivalents else "Discovery") + " (Lobby)",
                             party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
@@ -175,7 +181,7 @@ if __name__ == "__main__":
                         elif game_presence["sessionLoopState"] == "PREGAME":
                             get_state = "Agent Select"
                             
-                        rpc.update(
+                        rpc_update(
                             details = f"{match_type}: {game_presence['partyOwnerMatchScoreAllyTeam']} - {game_presence['partyOwnerMatchScoreEnemyTeam']}",
                             party_size = [game_presence["partySize"], game_presence["maxPartySize"]],
                             state = get_state,
