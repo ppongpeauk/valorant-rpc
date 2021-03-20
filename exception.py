@@ -10,3 +10,6 @@ class RiotAuthError(Exception):
 class RiotPresenceError(Exception):
     """Usually raised when the client cannot access their own presence"""
     pass
+class RiotDataNotFoundError(Exception):
+    """Raised when Riot installation data is not found"""
+    pass
